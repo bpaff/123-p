@@ -3,11 +3,12 @@ import pygame
 
 from settings import Settings
 from colors import Colors
+from collision import Collision
 
-class Cycle_trail(pygame.sprite.Sprite):
+
+class Cycle_trail():
     
     def __init__(self):
-        pygame.sprite.Sprite.__init__(self)
         self._trail = []
         self._trail_start_location = None
         self._trail_on = False
@@ -21,8 +22,8 @@ class Cycle_trail(pygame.sprite.Sprite):
     def _update_trail_surface(self, location=None):
         self._trail_surface.fill(Colors.BLACK)
         if self._trail != []:
-            for trail in self._trail:
-                pygame.draw.line(self._trail_surface, self._color, trail[0], trail[1], 2)
+            for line in self._trail:
+                pygame.draw.line(self._trail_surface, self._color, line[0], line[1], 2)
         if location is None:
             return
         pygame.draw.line(self._trail_surface, self._color, self._trail_start_location, tuple(location), 2)
@@ -72,5 +73,9 @@ class Cycle_trail(pygame.sprite.Sprite):
         
     def get_trail_surface(self):
         return self._trail_surface
-        
     
+    # collision
+    def collision(self, arrow_lines_rotated_location, cycle_trail):
+        if Collision.intersect_lines_to_lines(arrow_lines_rotated_location, cycle_trail._trail):
+            return True
+        return False

@@ -5,8 +5,12 @@ import pygame
 from settings import Settings
 from colors import Colors
 from cycle_trail import Cycle_trail
+from rotation import Rotation
+from transform import Transform
+from collision import Collision
 
-class Light_cycle(pygame.sprite.Sprite):
+
+class Light_cycle():
     
     ANGLE = math.cos(math.radians(45))
     DIRECTION_UP = 0
@@ -19,7 +23,6 @@ class Light_cycle(pygame.sprite.Sprite):
     DIRECTION_UP_LEFT = 315
     
     def __init__(self):
-        pygame.sprite.Sprite.__init__(self)
         self._pixel_per_time_passed = 1.0 / 200.0
         self._speed_adjustment = 1.0
         self._color = Colors.STEELBLUE
@@ -27,7 +30,7 @@ class Light_cycle(pygame.sprite.Sprite):
         self._max_size = max(self._size[0], self._size[1])
         self._direction = self.DIRECTION_UP
         self._alive = True
-        self._location = [100.0, 100.0]
+        self._location = [Settings.BOARD_DIMENSIONS[0] / 2.0, Settings.BOARD_DIMENSIONS[1] / 2.0]
         self._speed = 10.0
         self._create_arrow_points()
         self._create_arrow_surface()
@@ -35,32 +38,42 @@ class Light_cycle(pygame.sprite.Sprite):
         self._trail = Cycle_trail()
     
     def _create_arrow_points(self):
-        # create up arrow starting in lower left and going clockwise
+        # create up arrow starting in lower left and going clockwise with bottom middle at 0, 0
         self._arrow_points = (
                               # base left
-                              (self._max_size / 2 - self._size[0] / 4, self._max_size / 2 + self._size[1] / 2),
+                              (-self._size[0] / 4.0 , 0.0),
                               # inside left
-                              (self._max_size / 2 - self._size[0] / 4, self._max_size / 2 - self._size[1] / 4),
+                              (-self._size[0] / 4.0 , -self._size[1] * 3.0 / 4.0),
                               # far left
-                              (self._max_size / 2 - self._size[0] / 2, self._max_size / 2 - self._size[1] / 4),
+                              (-self._size[0] / 2.0 , -self._size[1] * 3.0 / 4.0),
                               # point
-                              (self._max_size / 2, self._max_size / 2 - self._size[1] / 2),
+                              (0.0, -self._size[1]),
                               # far right
-                              (self._max_size / 2 + self._size[0] / 2, self._max_size / 2 - self._size[1] / 4),
+                              (self._size[0] / 2.0 , -self._size[1] * 3.0 / 4.0),
                               # inside right
-                              (self._max_size / 2 + self._size[0] / 4, self._max_size / 2 - self._size[1] / 4),
+                              (self._size[0] / 4.0 , -self._size[1] * 3.0 / 4.0),
                               # base right
-                              (self._max_size / 2 + self._size[0] / 4, self._max_size / 2 + self._size[1] / 2),
+                              (self._size[0] / 4.0 , 0.0),
                               )
+        
+        self._arrow_lines = []
+        for i in range(len(self._arrow_points) - 1):
+            self._arrow_lines.append((self._arrow_points[i], self._arrow_points[i + 1]))
+        self._arrow_lines.append((self._arrow_points[len(self._arrow_points) - 1], self._arrow_points[0]))
+        self._arrow_lines = tuple(self._arrow_lines)
+        
+        self._arrow_points_rotated = self._arrow_points
+        self._arrow_lines_rotated = self._arrow_lines
     
     def _create_arrow_surface(self):
-        self._arrow_surface = pygame.Surface((self._max_size, self._max_size))
+        self._arrow_surface = pygame.Surface(Settings.BOARD_DIMENSIONS)
         self._arrow_surface.set_colorkey(Colors.BLACK)
     
     def _update_arrow_surface(self):
         self._arrow_surface.fill(Colors.BLACK)
-        pygame.draw.polygon(self._arrow_surface, self._color, self._arrow_points)
-        self._arrow_surface_rotated = pygame.transform.rotate(self._arrow_surface, -self._direction)
+        pygame.draw.polygon(self._arrow_surface, self._color,
+                            Transform.move_points(self._arrow_points_rotated, self._location))
+        self._arrow_lines_rotated_location = Transform.move_lines(self._arrow_lines_rotated, self._location)
 
     def is_alive(self):
         return self._alive
@@ -85,6 +98,8 @@ class Light_cycle(pygame.sprite.Sprite):
         if self._direction < 0:
             self._direction = 315
         self._trail.add_turn_location(self._location)
+        self._arrow_points_rotated = Rotation.rotate_points(self._arrow_points, self._direction, (0, 0), (0, 0))
+        self._arrow_lines_rotated = Rotation.rotate_lines(self._arrow_lines, self._direction, (0, 0), (0, 0))
         self._update_arrow_surface()
         
     def cycle_direction_right(self):
@@ -92,16 +107,27 @@ class Light_cycle(pygame.sprite.Sprite):
         if self._direction > 315:
             self._direction = 0
         self._trail.add_turn_location(self._location)
+        self._arrow_points_rotated = Rotation.rotate_points(self._arrow_points, self._direction, (0, 0), (0, 0))
+        self._arrow_lines_rotated = Rotation.rotate_lines(self._arrow_lines, self._direction, (0, 0), (0, 0))
         self._update_arrow_surface()
 
     def set_direction(self, direction):
-        self._direction = direction 
+        self._direction = direction
+        self._arrow_points_rotated = Rotation.rotate_points(self._arrow_points, self._direction, (0, 0), (0, 0))
+        self._arrow_lines_rotated = Rotation.rotate_lines(self._arrow_lines, self._direction, (0, 0), (0, 0))
+        self._update_arrow_surface()
         
     def get_direction(self):
         return self._direction
         
     def set_location(self, location):
         self._location = location
+        self._update_arrow_surface()
+        if self._location[0] < 0 or self._location[0] > Settings.BOARD_DIMENSIONS[0]:
+            self._alive = False
+            return
+        if self._location[1] < 0 or self._location[1] > Settings.BOARD_DIMENSIONS[1]:
+            self._alive = False
         
     def get_location(self):
         return self._location
@@ -127,41 +153,34 @@ class Light_cycle(pygame.sprite.Sprite):
         radians = math.radians(self._direction - 135)
         cos = math.cos(radians)
         sin = math.sin(radians)
-        self._location[0] = self._location[0] + speed * cos - speed * sin
-        self._location[1] = self._location[1] + speed * sin + speed * cos
-        self._trail.update_trail(self._location)    
+        self._location[0] += speed * cos - speed * sin
+        self._location[1] += speed * sin + speed * cos
+        self._trail.update_trail(self._location)
+        self._update_arrow_surface()
+        if self._location[0] < 0 or self._location[0] > Settings.BOARD_DIMENSIONS[0]:
+            self._alive = False
+            return
+        if self._location[1] < 0 or self._location[1] > Settings.BOARD_DIMENSIONS[1]:
+            self._alive = False
 
     def get_surface(self):
-        return self._arrow_surface_rotated
-    
-    def get_surface_location(self):
-        # TODO: Is there a better math way to do this?
-        if self._direction == self.DIRECTION_UP:
-            return (self._location[0] - self._max_size / 2, self._location[1] - self._max_size)    
-        elif self._direction == self.DIRECTION_UP_RIGHT:
-            return (self._location[0] - self._max_size / 2 * self.ANGLE, self._location[1] - self._max_size)
-        elif self._direction == self.DIRECTION_RIGHT:
-            return (self._location[0], self._location[1] - self._max_size / 2)
-        elif self._direction == self.DIRECTION_DOWN_RIGHT:
-            return (self._location[0] - self._max_size / 2 * self.ANGLE, self._location[1] - self._max_size / 2 * self.ANGLE)
-        elif self._direction == self.DIRECTION_DOWN:
-            return (self._location[0] - self._max_size / 2, self._location[1])
-        elif self._direction == self.DIRECTION_DOWN_LEFT:
-            return (self._location[0] - self._max_size, self._location[1] - self._max_size / 2 * self.ANGLE)
-        elif self._direction == self.DIRECTION_LEFT:
-            return (self._location[0] - self._max_size, self._location[1] - self._max_size / 2)
-        elif self._direction == self.DIRECTION_UP_LEFT:
-            return (self._location[0] - self._max_size, self._location[1] - self._max_size)
-        else:
-            raise Exception("Invalid direction")
+        return self._arrow_surface
 
-    def _rotate(self, points):
-        # not used at this time
-        radians = math.radians(self._direction)
-        cos = math.cos(radians)
-        sin = math.sin(radians)
-        return (points[0] * cos - points[1] * sin,
-                points[0] * sin + points[1] * cos)
+
+    # collision
+    def collision(self, cycle):
+        self._trail_collision(cycle)
+        if self == cycle:
+            return
+        self._cycle_collision(cycle)
+    
+    def _cycle_collision(self, cycle):
+        if Collision.intersect_lines_to_lines(self._arrow_lines_rotated_location, cycle._arrow_lines_rotated_location):
+            self._alive = False
+    
+    def _trail_collision(self, cycle):
+        if self._trail.collision(self._arrow_lines_rotated_location, cycle._trail):
+            self._alive = False
 
 
     # trail

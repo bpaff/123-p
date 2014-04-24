@@ -25,13 +25,13 @@ class Client():
         self._number_of_players = 1
         self._light_cycles = {}
         self._light_cycles[0] = Light_cycle()
-#         self._light_cycles[1] = Light_cycle()
+        self._light_cycles[1] = Light_cycle()
 #         self._light_cycles[2] = Light_cycle()
-#         self._light_cycles[1].set_color(Colors.BLUEVIOLET)
-#         self._light_cycles[1].set_location((130.0, 100.0))
-#         self._light_cycles[1].cycle_direction_left()
+        self._light_cycles[1].set_color(Colors.BLUEVIOLET)
+        self._light_cycles[1].set_location([600.0, 20.0])
+        self._light_cycles[1].set_direction(Light_cycle.DIRECTION_DOWN_LEFT)
 #         self._light_cycles[2].set_color(Colors.DARKGREEN)
-#         self._light_cycles[2].set_location((160.0, 100.0))
+#         self._light_cycles[2].set_location([160.0, 100.0])
 #         self._light_cycles[2].cycle_direction_right()
     
     def run(self):
@@ -70,6 +70,10 @@ class Client():
         
         for cycle in self._light_cycles.itervalues():
             cycle.move_tick(self._time_passed)
+        for cycle1 in self._light_cycles.itervalues():
+            for cycle2 in self._light_cycles.itervalues():
+                cycle1.collision(cycle2)
+        
          
     def _update_time_passed_history(self):
         self._time_passed_history[3] = self._time_passed_history[2]
@@ -87,7 +91,7 @@ class Client():
         
         for cycle in self._light_cycles.itervalues():
             if cycle.is_alive():
-                self._surface.blit(cycle.get_surface(), cycle.get_surface_location())
+                self._surface.blit(cycle.get_surface(), (0, 0))
                 self._surface.blit(cycle.get_trail_surface(), (0, 0))
             
         pygame.display.update()

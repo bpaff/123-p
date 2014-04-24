@@ -6,6 +6,6 @@ class Settings():
     CAPTION = 'Multiplayer Light Cycle'
     TICK = 100
     LIGHT_CYCLE_SIZE = (20.0, 30.0)
-    LIGHT_MIN_SPEED = 5
-    LIGHT_MAX_SPEED = 20
+    LIGHT_MIN_SPEED = 5.0
+    LIGHT_MAX_SPEED = 20.0
     

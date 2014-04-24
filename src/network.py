@@ -61,7 +61,7 @@ class Handler(asynchat.async_chat):
     def send_message(self, message):
         self.push(message + '\1\2\3')
         
-    def poll(self, timeout=.2, count=10):
+    def poll(self, timeout=.2, count=2):
         # use this API
         asyncore.loop(timeout=timeout, count=count)
         
