@@ -1,30 +1,12 @@
 
-import math
+a = []
+b = ((1, 2), (2, 3), (3, 4), (4, 5), (5, 6))
 
-radians = math.radians(45)
-cos = math.cos(math.radians(45))
-sin = math.sin(radians)
+d = []
+for c in b:
+    d.append((c[0] + 1, c[1] + 2))
 
-print cos
-print sin
+e = tuple((c[0] + 1, c[1] + 2) for c in b)
 
-radians = math.radians(90)
-cos = math.cos(radians)
-sin = math.sin(radians)
-
-print cos
-print sin
-
-radians = math.radians(138)
-cos = math.cos(radians)
-sin = math.sin(radians)
-
-print cos
-print sin
-
-radians = math.radians(180)
-cos = math.cos(radians)
-sin = math.sin(radians)
-
-print cos
-print sin
+print d
+print e
