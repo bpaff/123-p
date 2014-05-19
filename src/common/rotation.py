@@ -20,10 +20,11 @@ class Rotation():
         
         for point in a:
             points.append((
-                            ((point[0] - c[0]) * cos - (point[1] - c[1]) * sin) + c[0] + d[0],
-                            ((point[0] - c[0]) * sin + (point[1] - c[1]) * cos) + c[1] + d[1]
-                           ))
+            ((point[0] - c[0]) * cos - (point[1] - c[1]) * sin) + c[0] + d[0],
+            ((point[0] - c[0]) * sin + (point[1] - c[1]) * cos) + c[1] + d[1]
+           ))
         return points
+    
     
     @staticmethod
     def rotate_lines(a, b, c, d):
@@ -41,10 +42,10 @@ class Rotation():
         
         for line in a:
             lines.append((
-                          (((line[0][0] - c[0]) * cos - (line[0][1] - c[1]) * sin) + c[0] + d[0],
-                          ((line[0][0] - c[0]) * sin + (line[0][1] - c[1]) * cos) + c[1] + d[1]),
-                          (((line[1][0] - c[0]) * cos - (line[1][1] - c[1]) * sin) + c[0] + d[0],
-                          ((line[1][0] - c[0]) * sin + (line[1][1] - c[1]) * cos) + c[1] + d[1])
-                           ))
+              (((line[0][0] - c[0]) * cos - (line[0][1] - c[1]) * sin) + c[0] + d[0],
+              ((line[0][0] - c[0]) * sin + (line[0][1] - c[1]) * cos) + c[1] + d[1]),
+              (((line[1][0] - c[0]) * cos - (line[1][1] - c[1]) * sin) + c[0] + d[0],
+              ((line[1][0] - c[0]) * sin + (line[1][1] - c[1]) * cos) + c[1] + d[1])
+           ))
         return lines
     
