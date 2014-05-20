@@ -83,8 +83,6 @@ class Game():
             self._light_cycles[count] = Light_cycle(None, count, True)
             self._light_cycles[count].set_location(Settings.CYCLE_LOCATIONS[count])
             self._light_cycles[count].set_direction(Settings.CYCLE_DIRECTIONS[count])
-            self._light_cycles[count].set_trail_on(None)
-            self._light_cycles_ai[count] = Ai(self._light_cycles, count)
             count += 1
         
         for i in range(count, Settings.MATCHMAKER_MAXIMUM_PLAYERS):
