@@ -28,6 +28,7 @@ class Game():
         self._message_history_tick = 0
         self._message_history = {}
         self._waiting_for_startup = True
+        self._waiting_for_startup_ticks = 0
     
     
     def add_connection(self, connection):
@@ -180,7 +181,13 @@ class Game():
         if self._message_history_tick > 1:
             self._waiting_for_startup = False
             return
+        self._waiting_for_startup_ticks += 1
         print 'waiting for client startup'
+        if self._waiting_for_startup_ticks > 5.0 / Settings.TICK:
+            for key in self._connections:
+                if self._message_history_tick in self._connections_message_to_receive[key]:
+                    self.drop_connection(key)
+            self._cleanup_dropped_connections()
         
         
     def _tick_ai(self):

@@ -27,10 +27,14 @@ class Sock_listener(asyncore.dispatcher):
     def run(self):
         # use this API
         while self._keep_running:
-            asyncore.loop(timeout=.2, count=10)
+            asyncore.loop(timeout=0.1, count=10)
         self.close()
 
     
     def stop(self):
         # use this API
         self._keep_running = False
+
+    def poll(self, timeout=0.1, count=2):
+        # use this API
+        asyncore.loop(timeout=timeout, count=count)

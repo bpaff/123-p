@@ -73,16 +73,16 @@ class Sock_connection(async_chat):
         self.push(message + '\1\2\3')
 
         
-    def poll(self, timeout=.2, count=2):
+    def poll(self, timeout=0.1, count=2):
         # use this API
         asyncore.loop(timeout=timeout, count=count)
 
         
-    def run(self, timeout=.2, count=10):
+    def run(self, timeout=0.1, count=10):
         # use this API
         while self._keep_running:
             asyncore.loop(timeout=timeout, count=count)
-        asyncore.loop(timeout=.2, count=2)            
+        asyncore.loop(timeout=0.1, count=2)            
         self.close()    
 
     

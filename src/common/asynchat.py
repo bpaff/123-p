@@ -48,7 +48,6 @@ you - by calling your self.found_terminator() method.
 
 import socket
 import asyncore
-import traceback
 from collections import deque
 from sys import py3kwarning
 from warnings import filterwarnings, catch_warnings
@@ -208,11 +207,7 @@ class async_chat (asyncore.dispatcher):
 
     def initiate_send(self):
         while self.producer_fifo and self.connected:
-            try:
-                first = self.producer_fifo.popleft()
-            except IndexError:
-                print traceback.format_exc()
-                continue
+            first = self.producer_fifo.popleft()
             # handle empty string/buffer or None entry
             if not first:
                 if first is None:
