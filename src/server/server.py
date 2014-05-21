@@ -28,9 +28,9 @@ class Server():
         while self._keep_running:
             start_time = time.time()
             self._games.tick()
-            # max number of clients is maybe 1/5 the number of messages per tick, this does not scale well
+            # max number of clients might be around 1/5 of MAX_MESSAGES_PER_TICK , this does not scale well
             # can not use another thread because of asyncore threading issues
-            self._listener.poll(Settings.TICK / Settings.MAX_MESSAGES_PER_TICK, Settings.MAX_MESSAGES_PER_TICK)
+            self._listener.poll(0, Settings.MAX_MESSAGES_PER_TICK)
             sleep_time = Settings.TICK - (time.time() - start_time)
             if sleep_time > 0.001:
                 time.sleep(sleep_time)

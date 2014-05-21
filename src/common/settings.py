@@ -36,11 +36,12 @@ class Settings():
     BOARD_DIMENSIONS = (800, 500)
     CAPTION = 'Multiplayer Light Cycle'
     TICK = 0.1
-    MAX_MESSAGES_PER_TICK = 100
+    MAX_MESSAGES_PER_TICK = 200
     CYCLE_LOCATIONS = ([100.0, 100.0], [700.0, 100.0], [700.0, 400.0], [100.0, 400.0])
     CYCLE_DIRECTIONS = (DIRECTION_DOWN_RIGHT, DIRECTION_DOWN_LEFT, DIRECTION_UP_LEFT, DIRECTION_UP_RIGHT)
     INSTRUCTIONS = [
       'Do not hit walls and other light cycles',
+      'You are the blue cycle',
       'Left and right arrows to turn',
       'Up and down arrows (or a and z) to speed up and slow down',
       'Space bar to enable or disable light cycle wall',

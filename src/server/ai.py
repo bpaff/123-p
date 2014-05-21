@@ -13,7 +13,7 @@ class Ai():
         self._cycle_number = cycle_number
         self._ai_wait_seconds_min = 0.6
         self._ai_wait_seconds_max = 5.0
-        self._ai_wait_ticks = 9
+        self._ai_wait_ticks = 10
         self._ai_tick = 0
     
     

@@ -13,16 +13,7 @@ class Games():
         self._game_number = 0
         self._games = {}
         self._games_to_kill = []
-    
-    
-    def _get_next_game_number(self):
-        self._game_number += 1
-        while self._game_number in self._games:
-            self._game_number += 1
-            if self._game_number > 999999999:
-                self._game_number = 1
-        return self._game_number
-    
+        
     
     def tick(self):
         self._kill_games()
@@ -92,3 +83,13 @@ class Games():
                 self._games_to_kill.append(game)
             else:
                 game.tick()
+
+
+    def _get_next_game_number(self):
+        self._game_number += 1
+        while self._game_number in self._games:
+            self._game_number += 1
+            if self._game_number > 999999999:
+                self._game_number = 1
+        return self._game_number
+

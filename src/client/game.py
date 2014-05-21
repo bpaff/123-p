@@ -85,12 +85,12 @@ class Game():
     def message(self, message):
         message_decoded = json.loads(message)
         tick_number = int(message_decoded['tick_number'])
+        self._connection.send_message(Messages.tick_received(tick_number, self._game_number))
         if tick_number < self._tick_number:
             return
         if tick_number not in self._messages_on_tick:
             self._messages_on_tick[tick_number] = []
         self._messages_on_tick[tick_number].append(message_decoded)
-        self._connection.send_message(Messages.tick_received(tick_number, self._game_number))
     
     
     def run(self):
@@ -116,23 +116,39 @@ class Game():
         self._skipped_ticks = 0
         self._no_message_ticks = 0
         
+        waiting_for_server_ticks = 0
+        
         while self._keep_running:
             self._user_input.get_input()
             if 0 in self._messages_on_tick:
                 self._process_messages()
                 break
+            if waiting_for_server_ticks > 5.0 / Settings.TICK:
+                self._game_over = True
+            waiting_for_server_ticks += 1 
             self._connection.poll(Settings.TICK / 2.0, 2)
     
     
     def _phase_load_cycles(self):
         logging.debug('_phase_load_cycles, _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number))
         
+        if self._game_over:
+            return
+        
+        waiting_for_server_ticks = 0
+        
         while self._keep_running:
             self._user_input.get_input()
             if 1 in self._messages_on_tick:
                 self._process_messages()
                 break
+            if waiting_for_server_ticks > 5.0 / Settings.TICK:
+                self._game_over = True
+            waiting_for_server_ticks += 1 
             self._connection.poll(Settings.TICK / 2.0, 2)
+        
+        if not self._keep_running:
+            return
         
         for key in self._light_cycles:
             if key == self._player_number:
@@ -150,6 +166,9 @@ class Game():
     
     def _phase_play_game(self):
         logging.debug('_phase_play_game, _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number))
+        
+        if self._game_over:
+            return
         
         while self._keep_running:
             start_time = time.time()
@@ -240,7 +259,7 @@ class Game():
                         if message['message_type'] == Settings.MESSAGE_TYPE_PLAYER:
                             self._player_number = message['player']
                             continue
-                        print 'unhandled message in _process_messages: ' + str(message)
+                        logging.debug('_process_messages, unhandled message: ' + str(self.message))
         
         del self._messages_on_tick[self._tick_number]
         self._tick_number += 1
