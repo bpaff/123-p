@@ -36,6 +36,7 @@ class Light_cycle():
         self.update_cycle_surface()
         self._trail = Cycle_trail(surface, cycle_number, self._is_server)
         self._messages = []
+        self._cycle_wall_off_time = 0
     
     
     def _update_degress(self):
@@ -102,7 +103,7 @@ class Light_cycle():
 
     
     def turn_left(self):
-        self._direction = self._direction - 45
+        self._direction -= 45
         if self._direction < 0:
             self._direction = 315
         self._update_degress()
@@ -111,7 +112,7 @@ class Light_cycle():
 
 
     def turn_right(self):
-        self._direction = self._direction + 45
+        self._direction += 45
         if self._direction > 315:
             self._direction = 0
         self._update_degress()
@@ -148,6 +149,11 @@ class Light_cycle():
 
                 
     def move_tick(self, time_passed):
+        if not self._trail.is_trail_on():
+            self._cycle_wall_off_time += time_passed
+            if self._cycle_wall_off_time > 5.0:
+                self.set_trail_on(self._location)
+                
         speed = self._speed * time_passed
         self._location[0] += speed * self._cos - speed * self._sin
         self._location[1] += speed * self._sin + speed * self._cos
@@ -220,6 +226,7 @@ class Light_cycle():
 
 
     def set_trail_on(self, location):
+        self._cycle_wall_off_time = 0
         if location is None:
             self._trail.set_trail_on(self._location)
         else:

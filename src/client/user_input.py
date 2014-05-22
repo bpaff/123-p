@@ -10,17 +10,19 @@ class User_input():
     def __init__(self, game):
         self._game = game
         self._messages = []
-    
+        
 
     def get_input(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                self._game.send_quit()
                 self._game.stop()
-                self._messages.append(Messages.player_input('quit'))
+                break
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    self._game.send_quit()
                     self._game.stop()
-                    self._messages.append(Messages.player_input('quit'))
+                    break
                 elif event.key == pygame.K_UP:
                     self._messages.append(Messages.player_input('up'))
                 elif event.key == pygame.K_DOWN:

@@ -6,6 +6,7 @@ class Settings():
     CLIENT_HOST = 'localhost'
     SERVER_HOST = 'localhost'
     PORT = 2020
+    CLIENT_USE_AI = True
     
     
     # directions
@@ -29,6 +30,7 @@ class Settings():
     MESSAGE_TYPE_TRAIL_TURN = 14
     MESSAGE_TYPE_GAME_OVER = 16
     MESSAGE_TYPE_TICK_RECEIVED = 18
+    MESSAGE_TYPE_QUIT_GAME = 20
 
     
     # game settings
@@ -40,13 +42,17 @@ class Settings():
     CYCLE_LOCATIONS = ([100.0, 100.0], [700.0, 100.0], [700.0, 400.0], [100.0, 400.0])
     CYCLE_DIRECTIONS = (DIRECTION_DOWN_RIGHT, DIRECTION_DOWN_LEFT, DIRECTION_UP_LEFT, DIRECTION_UP_RIGHT)
     INSTRUCTIONS = [
+      'Do move window after connected',
       'Do not hit walls and other light cycles',
       'You are the blue cycle',
       'Left and right arrows to turn',
       'Up and down arrows (or a and z) to speed up and slow down',
       'Space bar to enable or disable light cycle wall',
+      'If the cycle wall is off for 5 seconds, it will turn on',
       'Esc key to quit'
     ]
+    CLIENT_AI_LOOK_AHEAD_TICKS = 8
+    SERVER_AI_LOOK_AHEAD_TICKS = 4
     
     
     # matchmaker settings

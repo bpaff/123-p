@@ -3,7 +3,7 @@ import time
 import json
 import logging
 
-from ai import Ai
+from common.ai import Ai
 from common.settings import Settings
 from common.messages import Messages
 from common.light_cycle import Light_cycle
@@ -41,7 +41,8 @@ class Game():
     
     def drop_connection(self, connection_number):
         if connection_number in self._connections:
-            self._connection_to_drop.append(connection_number)
+            if connection_number not in self._connection_to_drop:
+                self._connection_to_drop.append(connection_number)
         
     
     def start_game(self):   
@@ -59,6 +60,7 @@ class Game():
     def _cleanup_dropped_connections(self):
         while self._connection_to_drop:
             connection_number = self._connection_to_drop.pop()
+            logging.debug('_cleanup_dropped_connections, connection_number: ' + str(connection_number))
             if connection_number in self._connections:
                 self._connections[connection_number].set_game(None)
                 self._connections[connection_number].on_close()
@@ -74,7 +76,7 @@ class Game():
             del self._connection_to_cycle[connection_number]
             if cycle_number not in self._light_cycles:
                 break
-            self._light_cycles_ai[cycle_number] = Ai(self._light_cycles, cycle_number)
+            self._light_cycles_ai[cycle_number] = Ai(True, self._light_cycles, cycle_number)
         
         if not self._connections:
             self.end_game()
@@ -92,8 +94,6 @@ class Game():
             self._light_cycles[count] = Light_cycle(None, count, True)
             self._light_cycles[count].set_location(Settings.CYCLE_LOCATIONS[count])
             self._light_cycles[count].set_direction(Settings.CYCLE_DIRECTIONS[count])
-            self._light_cycles[count].set_trail_on(None)
-            self._light_cycles_ai[count] = Ai(self._light_cycles, count)
             count += 1
         
         for i in range(count, Settings.MATCHMAKER_MAXIMUM_PLAYERS):
@@ -101,7 +101,7 @@ class Game():
             self._light_cycles[i].set_location(Settings.CYCLE_LOCATIONS[i])
             self._light_cycles[i].set_direction(Settings.CYCLE_DIRECTIONS[i])
             self._light_cycles[i].set_trail_on(None)
-            self._light_cycles_ai[i] = Ai(self._light_cycles, i)
+            self._light_cycles_ai[i] = Ai(True, self._light_cycles, i)
         
         for cycle in self._light_cycles.itervalues():
             cycle.move_tick(0)
@@ -206,7 +206,7 @@ class Game():
             return
         
         for key in self._light_cycles_ai:
-            command = self._light_cycles_ai[key].tick()
+            command = self._light_cycles_ai[key].tick(self._tick_number, 10)
             if command == 'left':
                 self._light_cycles[key].turn_left()
                 continue
@@ -229,6 +229,12 @@ class Game():
             connection_number = message['connection_number']
             key = self._connection_to_cycle.get(connection_number, None)
             if key is None:
+                continue
+            
+            if message['message_type'] == Settings.MESSAGE_TYPE_QUIT_GAME:
+                if message['game_number'] != self._game_number:
+                    continue
+                self.drop_connection(connection_number)
                 continue
             
             tick_number = int(message['tick_number'])
@@ -263,9 +269,6 @@ class Game():
                             continue
                         if message['input_type'] == 'space':
                             self._light_cycles[key].toggle_trail()
-                            continue
-                        if message['input_type'] == 'quit':
-                            self.drop_connection(connection_number)
                             continue
                         logging.debug('_process_messages, unhandled message: ' + str(message))
 

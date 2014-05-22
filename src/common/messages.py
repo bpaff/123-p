@@ -78,10 +78,20 @@ class Messages():
           'won':won
         }
 
+
     @staticmethod
     def tick_received(tick_number, game_number):
         return json.dumps({
           'message_type':Settings.MESSAGE_TYPE_TICK_RECEIVED,
+          'tick_number':tick_number,
+          'game_number':game_number
+        })
+    
+    
+    @staticmethod
+    def quit_game(tick_number, game_number):
+        return json.dumps({
+          'message_type':Settings.MESSAGE_TYPE_QUIT_GAME,
           'tick_number':tick_number,
           'game_number':game_number
         })

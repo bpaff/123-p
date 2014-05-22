@@ -8,6 +8,7 @@ import pygame
 
 from common.settings import Settings
 from user_input import User_input
+from common.ai import Ai
 from common.messages import Messages
 from common.colors import Colors
 from common.light_cycle import Light_cycle
@@ -39,7 +40,10 @@ class Game():
         self._skipped_ticks = 0
         self._no_message_ticks = 0
         self._wins = 0
-        self._loses = 0    
+        self._loses = 0
+        self._client_start_time = time.time()
+        self._client_ai = None
+        self._ai_number_of_commands_received = 0
 
 
     def set_text(self, text):
@@ -101,10 +105,25 @@ class Game():
 
     
     def stop(self):
+        logging.debug('stop, self._client_start_time: ' + str(self._client_start_time))
         self._keep_running = False
+        
+    
+    def send_quit(self):
+        if not self._connection.connected:
+            return
+        self._connection.send_message(Messages.quit_game(self._tick_number, self._game_number))
+        self._connection.poll(0, 20)
+    
+    
+    def get_input(self):
+        while self._keep_running:
+            self._user_input.get_input()
 
 
     def _phase_wait_for_server(self):
+        logging.debug('_phase_wait_for_server, _client_start_time: ' + str(self._client_start_time))
+        
         self.set_text('Searching for game...')
         
         self._light_cycles = {}
@@ -115,6 +134,8 @@ class Game():
         self._tick_number = 0
         self._skipped_ticks = 0
         self._no_message_ticks = 0
+        self._client_ai = None
+        self._last_command_tick = 0
         
         waiting_for_server_ticks = 0
         
@@ -130,7 +151,7 @@ class Game():
     
     
     def _phase_load_cycles(self):
-        logging.debug('_phase_load_cycles, _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number))
+        logging.debug('_phase_load_cycles, _client_start_time: ' + str(self._client_start_time) + ' _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number))
         
         if self._game_over:
             return
@@ -162,10 +183,14 @@ class Game():
         
         self._user_input.get_input()
         self._user_input.get_and_delete_messages()
+        
+        if Settings.CLIENT_USE_AI:
+            self._client_ai = Ai(False, self._light_cycles, self._player_number)
+            self._connection.send_message(Messages.tick(self._tick_number, self._game_number, [Messages.player_input('space')]))
     
     
     def _phase_play_game(self):
-        logging.debug('_phase_play_game, _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number))
+        logging.debug('_phase_play_game, _client_start_time: ' + str(self._client_start_time) + ' _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number))
         
         if self._game_over:
             return
@@ -183,6 +208,7 @@ class Game():
                 self._update_display()
                 self._skipped_ticks = 0
                 self._no_message_ticks = 0
+                self._use_ai()
             else:
                 if self._tick_number + 1 in self._messages_on_tick or self._tick_number in self._messages_on_tick:
                     if self._skipped_ticks > 1.0 / Settings.TICK:
@@ -207,11 +233,12 @@ class Game():
             if self._game_over:
                 break
         
-        logging.debug('_phase_play_game, _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number) + ' _tick_number: ' + str(self._tick_number))
+        logging.debug('_phase_play_game, _client_start_time: ' + str(self._client_start_time) + ' _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number) + ' _tick_number: ' + str(self._tick_number))
 
 
     def _process_messages(self):
         # process game messages
+        self._ai_number_of_commands_received = 0
         while self._messages_on_tick[self._tick_number]:
             message = self._messages_on_tick[self._tick_number].pop()
             if message['message_type'] == Settings.MESSAGE_TYPE_TICK:
@@ -246,6 +273,8 @@ class Game():
                             continue
                         if message['message_type'] == Settings.MESSAGE_TYPE_TRAIL_TURN:
                             key = int(message['cycle_number'])
+                            if key == self._player_number:
+                                self._ai_number_of_commands_received += 1
                             if key in self._light_cycles:
                                 self._light_cycles[key].set_trail_turn(message['location'])  
                             continue
@@ -297,3 +326,27 @@ class Game():
             cycle.update_trail_surface()
         
         pygame.display.update()
+        
+        
+    def _use_ai(self):
+        if not Settings.CLIENT_USE_AI:
+            return
+        if self._player_number not in self._light_cycles:
+            return
+        
+        command = self._client_ai.tick(self._tick_number, self._ai_number_of_commands_received)
+
+        if command == 'left':
+            self._connection.send_message(Messages.tick(self._tick_number, self._game_number, [Messages.player_input('left')]))
+            return
+        if command == 'double_left':
+            self._connection.send_message(Messages.tick(self._tick_number, self._game_number,
+                [Messages.player_input('left'), Messages.player_input('left')]))
+            return
+        if command == 'right':
+            self._connection.send_message(Messages.tick(self._tick_number, self._game_number, [Messages.player_input('right')]))
+            return
+        if command == 'double_right':
+            self._connection.send_message(Messages.tick(self._tick_number, self._game_number,
+                [Messages.player_input('right'), Messages.player_input('right')]))
+            return
