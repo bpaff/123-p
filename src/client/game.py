@@ -146,6 +146,7 @@ class Game():
                 break
             if waiting_for_server_ticks > 5.0 / Settings.TICK:
                 self._game_over = True
+                break
             waiting_for_server_ticks += 1 
             self._connection.poll(Settings.TICK / 2.0, 2)
     
@@ -165,6 +166,7 @@ class Game():
                 break
             if waiting_for_server_ticks > 5.0 / Settings.TICK:
                 self._game_over = True
+                break
             waiting_for_server_ticks += 1 
             self._connection.poll(Settings.TICK / 2.0, 2)
         
