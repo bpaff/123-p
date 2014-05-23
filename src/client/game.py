@@ -3,7 +3,12 @@ import time
 import logging
 import json
 
-import pygame
+pygame_failed = True
+try:
+    import pygame
+    pygame_failed = False
+except:
+    pass
 
 
 from common.settings import Settings
@@ -16,13 +21,19 @@ from common.light_cycle import Light_cycle
 
 class Game():
     
-    def __init__(self):
+    def __init__(self, is_bot):
+        if is_bot:
+            Settings.TURN_OFF_GUI = True
         logging.basicConfig(filename='client.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%m-%d-%Y %H:%M:%S')
-        pygame.init()
-        self._surface = pygame.display.set_mode(Settings.SCREEN_DIMENSIONS)
-        pygame.display.set_caption(Settings.CAPTION)
-        pygame.mouse.set_visible(False)
-        self._font_helvettica = pygame.font.SysFont('helvettica', 24)
+        if pygame_failed or Settings.TURN_OFF_GUI:
+            Settings.CLIENT_USE_AI = True
+            self._surface = None
+        else:
+            pygame.init()
+            self._surface = pygame.display.set_mode(Settings.SCREEN_DIMENSIONS)
+            pygame.display.set_caption(Settings.CAPTION)
+            pygame.mouse.set_visible(False)
+            self._font_helvettica = pygame.font.SysFont('helvettica', 24)
         self._connection_host = None
         self._connection = None
         self._user_input = User_input(self)
@@ -37,7 +48,6 @@ class Game():
         self._game_number = None
         self._player_number = None
         self._tick_number = 0
-        self._skipped_ticks = 0
         self._no_message_ticks = 0
         self._wins = 0
         self._loses = 0
@@ -132,7 +142,6 @@ class Game():
         self._game_number = None
         self._player_number = None
         self._tick_number = 0
-        self._skipped_ticks = 0
         self._no_message_ticks = 0
         self._client_ai = None
         self._last_command_tick = 0
@@ -189,6 +198,20 @@ class Game():
         if Settings.CLIENT_USE_AI:
             self._client_ai = Ai(False, self._light_cycles, self._player_number)
             self._connection.send_message(Messages.tick(self._tick_number, self._game_number, [Messages.player_input('space')]))
+            
+        waiting_for_server_ticks = 0
+        
+        while self._keep_running:
+            self._user_input.get_input()
+            if 4 in self._messages_on_tick:
+                break
+            if waiting_for_server_ticks > 5.0 / Settings.TICK:
+                self._game_over = True
+                break
+            waiting_for_server_ticks += 1
+            self._connection.poll(Settings.TICK / 2.0, 2)
+        
+        waiting_for_server_ticks = 0
     
     
     def _phase_play_game(self):
@@ -200,6 +223,8 @@ class Game():
         while self._keep_running:
             start_time = time.time()
             
+            self._connection.poll(0, 10)
+            
             self._user_input.get_input()
             messages = self._user_input.get_and_delete_messages()
             if messages != []:
@@ -208,33 +233,23 @@ class Game():
             if self._tick_number + 2 in self._messages_on_tick:
                 self._process_messages()
                 self._update_display()
-                self._skipped_ticks = 0
                 self._no_message_ticks = 0
                 self._use_ai()
             else:
-                if self._tick_number + 1 in self._messages_on_tick or self._tick_number in self._messages_on_tick:
-                    if self._skipped_ticks > 1.0 / Settings.TICK:
-                        logging.debug('skipped tick , _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number) + ' _tick_number: ' + str(self._tick_number))
-                        self._skipped_ticks = 0
-                        self._no_message_ticks = 0
-                        self._tick_number += 1
-                    self._skipped_ticks += 1
-                else:
-                    if self._no_message_ticks > 5.0 / Settings.TICK:
-                        self._game_over = True
-                        logging.debug('no message tick , _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number) + ' _tick_number: ' + str(self._tick_number))
-                    self._no_message_ticks += 1
-            
-            if self._tick_number + 2 in self._messages_on_tick:
-                sleep_time = (Settings.TICK / 2.0) - (time.time() - start_time)
-                if sleep_time > 0.001:
-                    time.sleep(sleep_time)
-            else:
-                self._connection.poll(Settings.TICK / 5.0, 5)
-            
+                self._no_message_ticks += 1
+                if self._no_message_ticks > 3:
+                    logging.debug('_no_message_ticks: ' + str(self._no_message_ticks) + ' _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number) + ' _tick_number: ' + str(self._tick_number))
+                if self._no_message_ticks > 5.0 / Settings.TICK:
+                    self._game_over = True
+                    logging.debug('no message tick game over, _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number) + ' _tick_number: ' + str(self._tick_number))
+
             if self._game_over:
                 break
-        
+
+            sleep_time = (Settings.TICK / 2.0) - (time.time() - start_time)
+            if sleep_time > 0.001:
+                time.sleep(sleep_time)
+
         logging.debug('_phase_play_game, _client_start_time: ' + str(self._client_start_time) + ' _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number) + ' _tick_number: ' + str(self._tick_number))
 
 
@@ -297,6 +312,9 @@ class Game():
 
 
     def _update_display(self):
+        if pygame_failed or Settings.TURN_OFF_GUI:
+            return
+        
         self._surface.fill(Colors.BLACK)
         
         pygame.draw.line(

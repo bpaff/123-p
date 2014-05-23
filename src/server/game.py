@@ -333,17 +333,23 @@ class Game():
                 if i in self._connections_message_to_receive[key]:
                     if self._waiting_for_startup:
                         if self._waiting_for_startup_ticks > 1.0 / Settings.TICK:
-                            if self._message_history_tick == 0:
+                            if i == 0:
                                 self._connections[key].send_message(
-                                    Messages.tick(0, self._game_number, [[Messages.player_number(self._connection_to_cycle[key])]])
+                                    Messages.tick(i, self._game_number, [[Messages.player_number(self._connection_to_cycle[key])]])
                                 )
-                                self._message_resend_count[key] += 1
-                                logging.debug('resent tick, _game_number: ' + str(self._game_number) + ' _message_history_tick: ' + str(self._message_history_tick))
                             else:
                                 self._connections[key].send_message(self._message_history[i])
-                                self._message_resend_count[key] += 1
-                                logging.debug('resent tick, _game_number: ' + str(self._game_number) + ' i: ' + str(i))
+                            self._message_resend_count[key] += 1
+                            try:
+                                self._connections_message_to_receive[key].remove(i)
+                            except ValueError:
+                                pass
+                            logging.debug('resent tick, _game_number: ' + str(self._game_number) + ' i: ' + str(i))
                     else:
                         self._connections[key].send_message(self._message_history[i])
                         self._message_resend_count[key] += 1
+                        try:
+                            self._connections_message_to_receive[key].remove(i)
+                        except ValueError:
+                            pass
                         logging.debug('resent tick, _game_number: ' + str(self._game_number) + ' i: ' + str(i))

@@ -35,6 +35,8 @@ class Server():
             sleep_time = Settings.TICK - (time.time() - start_time)
             if sleep_time > 0.001:
                 time.sleep(sleep_time)
+            else:
+                logging.debug('sleep time: ' + str(sleep_time)) 
     
     
     def stop(self):

@@ -222,7 +222,10 @@ class Light_cycle():
 
 
     def toggle_trail(self):
-        self._trail.toggle_trail(self._location)
+        if self._trail.is_trail_on():
+            self.set_trail_off(None)
+        else:
+            self.set_trail_on(None)
 
 
     def set_trail_on(self, location):

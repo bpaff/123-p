@@ -62,13 +62,6 @@ class Cycle_trail():
     def add_location (self, location1, location2):
         self._trail.append((tuple(location1), tuple(location2)))
 
-        
-    def toggle_trail(self, location):
-        if self._trail_on:
-            self.set_trail_off(location)
-        else:
-            self.set_trail_on(location)
-
     
     def set_trail_on(self, location):
         self._trail_on = True

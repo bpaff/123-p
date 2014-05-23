@@ -7,6 +7,7 @@ class Settings():
     SERVER_HOST = 'localhost'
     PORT = 2020
     CLIENT_USE_AI = False
+    TURN_OFF_GUI = False
     
     
     # directions

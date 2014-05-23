@@ -179,6 +179,8 @@ class Ai():
         lines = (
             ((Settings.LIGHT_CYCLE_SIZE[0] / 2.0, 0),
             (Settings.LIGHT_CYCLE_SIZE[0] / 2.0, -Settings.LIGHT_CYCLE_SIZE[1] - (self._speed * time_passed))),
+            ((Settings.LIGHT_CYCLE_SIZE[0] / 2.0, -Settings.LIGHT_CYCLE_SIZE[1] - (self._speed * time_passed)),
+            (-Settings.LIGHT_CYCLE_SIZE[0] / 2.0, -Settings.LIGHT_CYCLE_SIZE[1] - (self._speed * time_passed))),
             ((-Settings.LIGHT_CYCLE_SIZE[0] / 2.0, 0),
             (-Settings.LIGHT_CYCLE_SIZE[0] / 2.0, -Settings.LIGHT_CYCLE_SIZE[1] - (self._speed * time_passed)))
         )

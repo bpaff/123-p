@@ -1,7 +1,13 @@
 
-import pygame
+pygame_failed = True
+try:
+    import pygame
+    pygame_failed = False
+except:
+    pass
 
 
+from common.settings import Settings
 from common.messages import Messages
 
 
@@ -13,6 +19,9 @@ class User_input():
         
 
     def get_input(self):
+        if pygame_failed or Settings.TURN_OFF_GUI:
+            return
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self._game.send_quit()
@@ -46,6 +55,9 @@ class User_input():
 
 
     def get_text_input(self):
+        if pygame_failed or Settings.TURN_OFF_GUI:
+            return 'return'
+        
         event = pygame.event.wait()
         if event.type == pygame.QUIT:
             return 'quit'
