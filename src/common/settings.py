@@ -6,7 +6,7 @@ class Settings():
     CLIENT_HOST = 'localhost'
     SERVER_HOST = 'localhost'
     PORT = 2020
-    CLIENT_USE_AI = True
+    CLIENT_USE_AI = False
     
     
     # directions
