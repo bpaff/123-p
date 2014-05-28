@@ -16,6 +16,9 @@ class Sock_listener(asyncore.dispatcher):
 
 
     def handle_accept(self):
+        if not self._keep_running:
+            self.close()
+            return
         pair = self.accept()
         if pair is None:
             print 'Invalid connection'

@@ -38,10 +38,8 @@ class Cycle_trail():
         pygame.draw.line(self._surface, self._color, self._trail_start_location, tuple(location), 2)
     
     
-    def get_and_delete_messages(self):
-        messages = self._messages
-        self._messages = []
-        return messages
+    def get_messages(self):
+        return self._messages
     
     
     def set_trail_color(self, color):

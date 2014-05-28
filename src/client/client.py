@@ -36,7 +36,7 @@ class Client():
             return
 
         self._game.run()
-
+        
         self._game.set_text('Disconnected from server, closing...')
         time.sleep(1)
 

@@ -14,7 +14,7 @@ print 'Loading bots....'
 
 processes = []
 
-for _ in range(0, 42):
+for _ in range(0, 30):
     process = subprocess.Popen('python client.py True', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     processes.append(process)
     time.sleep(0.1)
@@ -23,7 +23,9 @@ print 'Bots loaded, press enter to quit'
 line = sys.stdin.readline()
 
 for process in processes:
-    os.kill(process.pid, 2)
+    
+    if process.poll() == None:
+        os.kill(process.pid, 2)
     
     while True:
         line = process.stdout.read()

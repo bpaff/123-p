@@ -7,7 +7,7 @@ class Connections(Singleton):
     def __init__(self):
         self._connection_number = 0
         self._connections = {}
-        self._new_connections = []
+        self._connections_looking = []
     
     
     def _get_next_connection_number(self):
@@ -23,13 +23,16 @@ class Connections(Singleton):
         connection_number = self._get_next_connection_number()
         self._connections[connection_number] = connection
         connection.set_connection_number(connection_number)
-        self._new_connections.append(connection)
     
     
-    def get_new_connection_and_remove(self):
-        if self._new_connections:
-            return self._new_connections.pop()
+    def get_connection_looking_and_remove(self):
+        if self._connections_looking:
+            return self._connections_looking.pop()
         return None
+    
+    
+    def looking_for_game(self, connection):
+        self._connections_looking.append(connection)
 
 
     def close_connection(self, connection_number):

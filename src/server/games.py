@@ -17,7 +17,7 @@ class Games():
     
     def tick(self):
         self._kill_games()
-        self._get_new_connections()
+        self._get_connections_looking()
         self._do_matchmaking()
         self._tick_games()
     
@@ -28,15 +28,16 @@ class Games():
             game_number = game.get_game_number()
             if game_number in self._games: 
                 game.end_game()
-                self._connections_need_game.extend(game.get_connections().itervalues())
                 del self._games[game_number]
     
     
-    def _get_new_connections(self):
+    def _get_connections_looking(self):
         while True:
-            connection = self._connections.get_new_connection_and_remove()
+            connection = self._connections.get_connection_looking_and_remove()
             if connection == None:
                 return
+            if connection in self._connections_need_game:
+                return 
             self._connections_need_game.append(connection)
     
     

@@ -1,6 +1,5 @@
 
 from common.sock_connection import Sock_connection
-
 from connections import Connections
 
 
@@ -19,7 +18,6 @@ class Connection(Sock_connection):
     
     def on_close(self):
         if self._connection_number is None:
-            # Note: if this does get printed, should look into doing something besides printing it out
             print 'look into why this has no connection number'
             return
         self._connections.close_connection(self._connection_number)
@@ -28,6 +26,8 @@ class Connection(Sock_connection):
     
     def on_message(self, message):
         if self._game is None:
+            if message == 'looking_for_game':
+                self._connections.looking_for_game(self);
             return
         self._game.message(message, self._connection_number)
     

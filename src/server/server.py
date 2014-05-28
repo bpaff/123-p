@@ -23,7 +23,6 @@ class Server():
         self._games = Games()
         self._listener = Sock_listener(Settings.SERVER_HOST, Settings.PORT, Connection)
         logging.info('listening on ' + str(Settings.SERVER_HOST) + ':' + str(Settings.PORT))
-
         
     def run(self):
         while self._keep_running:
@@ -51,4 +50,3 @@ except KeyboardInterrupt:
     pass
 
 server.stop()
-

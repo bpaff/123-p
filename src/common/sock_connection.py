@@ -2,8 +2,7 @@
 import socket
 import asyncore
 
-
-from common.asynchat import async_chat 
+from common.asynchat import async_chat, simple_producer 
 
 
 class Sock_connection(async_chat):
@@ -70,7 +69,7 @@ class Sock_connection(async_chat):
         
     def send_message(self, message):
         # use this API
-        self.push(message + '\1\2\3')
+        self.push_with_producer(simple_producer(message + '\1\2\3'))
 
         
     def poll(self, timeout=0.1, count=2):

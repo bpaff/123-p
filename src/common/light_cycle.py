@@ -83,10 +83,8 @@ class Light_cycle():
         return self._speed
 
     
-    def get_and_delete_messages(self):
-        messages = self._messages
-        self._messages = []
-        return messages
+    def get_messages(self):
+        return self._messages
     
 
     def is_alive(self):
@@ -205,8 +203,8 @@ class Light_cycle():
     
 
     # trail
-    def trail_get_and_delete_messages(self):
-        return self._trail.get_and_delete_messages()
+    def trail_get_messages(self):
+        return self._trail.get_messages()
     
     
     def update_trail_surface(self):
