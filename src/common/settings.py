@@ -3,10 +3,8 @@
 class Settings():
     
     # connection settings
-    CLIENT_HOST = '10.42.234.113'
-    SERVER_HOST = '10.42.234.113'
-    # CLIENT_HOST = 'localhost'
-    # SERVER_HOST = 'localhost'
+    CLIENT_HOST = 'localhost'
+    SERVER_HOST = 'localhost'
     PORT = 2020
     CLIENT_USE_AI = False
     TURN_OFF_GUI = False
