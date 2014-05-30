@@ -2,10 +2,8 @@
 import socket
 import asyncore
 
-from common.asynchat import async_chat, simple_producer 
 
-
-class Sock_connection(async_chat):
+class Sock_connection(asyncore.dispatcher_with_send):
     
     def __init__(self, *args, **kwargs):
         # host, port, sock
@@ -30,9 +28,9 @@ class Sock_connection(async_chat):
             sock = args[2]
         
         if sock is not None:
-            async_chat.__init__(self, sock)
+            asyncore.dispatcher_with_send.__init__(self, sock)
         elif host is not None and port is not None:
-            async_chat.__init__(self)
+            asyncore.dispatcher_with_send.__init__(self)
             self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
                 self.connect((host, port))
@@ -42,9 +40,11 @@ class Sock_connection(async_chat):
         else:
             raise Exception("Invalid arguments")
         
-        self.set_terminator('\1\2\3')
+        self._terminator = '\1\2\3'
+        self._terminator_len = len(self._terminator)
         self._buffer = []
         self._keep_running = True
+        self._finding_buffer = ''
     
     
     def handle_connect(self):
@@ -57,11 +57,28 @@ class Sock_connection(async_chat):
         self.close()
     
         
-    def collect_incoming_data(self, data):
-        self._buffer.append(data)
+    def handle_read(self):
+        data = self.recv(8192)
+        if not data:
+            return
+        
+        self._finding_buffer += data
+        index = self._finding_buffer.find(self._terminator)
+        while index > -1:
+            data = self._finding_buffer[:index]
+            if data:
+                self._buffer.append(data)
+            self._finding_buffer = self._finding_buffer[index + self._terminator_len:]
+            index = self._finding_buffer.find(self._terminator)
+            self._found_terminator()
+        
+        # added extra 10 just so not splitting data that was really small for no need
+        if len(self._finding_buffer) > self._terminator_len + 10:
+            self._buffer.append(self._finding_buffer[:-self._terminator_len])
+            self._finding_buffer = self._finding_buffer[-self._terminator_len:]
 
 
-    def found_terminator(self):
+    def _found_terminator(self):
         message = ''.join(self._buffer)
         self._buffer = []
         self.on_message(message)
@@ -69,7 +86,12 @@ class Sock_connection(async_chat):
         
     def send_message(self, message):
         # use this API
-        self.push_with_producer(simple_producer(message + '\1\2\3'))
+        if not self.connected:
+            return
+        try:
+            self.send(message + self._terminator)
+        except socket.error:
+            self.handle_error()
 
         
     def poll(self, timeout=0.1, count=2):

@@ -102,7 +102,7 @@ class Game():
         tick_number = int(message_decoded['tick_number'])
         if not self._game_over:
             self._connection.send_message(Messages.tick_received(tick_number, int(message_decoded['game_number'])))
-        if tick_number > 0 and message_decoded['game_number'] != self._game_number:
+        if self._game_number is not None and message_decoded['game_number'] != self._game_number:
             logging.debug('message, wrong game number, _client_start_time: ' + str(self._client_start_time) + ' message_decoded: ' + str(message_decoded))
             return
         if tick_number < self._tick_number:
