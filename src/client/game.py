@@ -99,10 +99,8 @@ class Game():
         
     def message(self, message):
         message_decoded = json.loads(message)
-        tick_number = int(message_decoded['tick_number'])
-        if not self._game_over:
-            self._connection.send_message(Messages.tick_received(tick_number, int(message_decoded['game_number'])))
-        if self._game_number is not None and message_decoded['game_number'] != self._game_number:
+        tick_number = int(message_decoded['tick'])
+        if self._game_number is not None and message_decoded['game'] != self._game_number:
             logging.debug('message, wrong game number, _client_start_time: ' + str(self._client_start_time) + ' message_decoded: ' + str(message_decoded))
             return
         if tick_number < self._tick_number:
@@ -193,6 +191,9 @@ class Game():
         if not self._keep_running:
             return
         
+        self._connection.send_message(Messages.start_game(self._tick_number, self._game_number));
+        self._connection.poll(0, 2)
+        
         for key in self._light_cycles:
             if key == self._player_number:
                 continue
@@ -209,7 +210,10 @@ class Game():
         if Settings.CLIENT_USE_AI:
             self._client_ai = Ai(False, self._light_cycles, self._player_number)
             self._connection.send_message(Messages.tick(self._tick_number, self._game_number, [Messages.player_input('space')]))
-            
+        
+        self._connection.send_message(Messages.start_game(self._tick_number, self._game_number));
+        self._connection.poll(0, 2)
+        
         waiting_for_server_ticks = 0
         
         while self._keep_running:
@@ -252,6 +256,7 @@ class Game():
             else:
                 self._no_message_ticks += 1
                 if self._no_message_ticks > 5:
+                    self._connection.send_message(Messages.resend_tick(self._tick_number, self._game_number));
                     logging.debug('_no_message_ticks: ' + str(self._no_message_ticks) + ' _game_number: ' + str(self._game_number) + ' _player_number: ' + str(self._player_number) + ' _tick_number: ' + str(self._tick_number))
                 if self._no_message_ticks > Settings.CLIENT_SECONDS_TO_WAIT / Settings.TICK:
                     self._game_over = True
@@ -271,13 +276,13 @@ class Game():
         self._ai_number_of_commands_received = 0
         while self._messages_on_tick[self._tick_number]:
             message = self._messages_on_tick[self._tick_number].pop()
-            if message['message_type'] == Settings.MESSAGE_TYPE_TICK:
+            if message['type'] == Settings.MESSAGE_TYPE_TICK:
                 if self._tick_number == 0:
-                    self._game_number = message['game_number']
+                    self._game_number = message['game']
                 
                 message_list = message['messages']
                 for message in message_list:
-                    if message['message_type'] == Settings.MESSAGE_TYPE_CYCLE_POSITION:
+                    if message['type'] == Settings.MESSAGE_TYPE_CYCLE_POSITION:
                         key = int(message['cycle_number'])
                         if self._tick_number == 1:
                             self._light_cycles[key] = Light_cycle(self._surface, key, False)
@@ -285,7 +290,7 @@ class Game():
                             self._light_cycles[key].set_cycle_position(message['cycle_position'])
                         continue
                     
-                    if message['message_type'] == Settings.MESSAGE_TYPE_CYCLE_ALIVE:
+                    if message['type'] == Settings.MESSAGE_TYPE_CYCLE_ALIVE:
                         key = int(message['cycle_number'])
                         if message['is_alive']:
                             continue
@@ -293,7 +298,7 @@ class Game():
                             del self._light_cycles[key]
                         continue
                     
-                    if message['message_type'] == Settings.MESSAGE_TYPE_TRAIL_ON:
+                    if message['type'] == Settings.MESSAGE_TYPE_TRAIL_ON:
                         key = int(message['cycle_number'])
                         if key in self._light_cycles:
                             if message['trail_on']:
@@ -302,7 +307,7 @@ class Game():
                                 self._light_cycles[key].set_trail_off(message['location'])
                         continue
                     
-                    if message['message_type'] == Settings.MESSAGE_TYPE_TRAIL_TURN:
+                    if message['type'] == Settings.MESSAGE_TYPE_TRAIL_TURN:
                         key = int(message['cycle_number'])
                         if key == self._player_number:
                             self._ai_number_of_commands_received += 1
@@ -310,7 +315,7 @@ class Game():
                             self._light_cycles[key].set_trail_turn(message['location'])  
                         continue
                     
-                    if message['message_type'] == Settings.MESSAGE_TYPE_GAME_OVER:
+                    if message['type'] == Settings.MESSAGE_TYPE_GAME_OVER:
                         self._game_over = True
                         if message['won']:
                             self._wins += 1
@@ -318,7 +323,7 @@ class Game():
                             self._loses += 1
                         return
                     
-                    if message['message_type'] == Settings.MESSAGE_TYPE_PLAYER:
+                    if message['type'] == Settings.MESSAGE_TYPE_PLAYER:
                         self._player_number = message['player']
                         continue
                     logging.debug('_process_messages, unhandled message, _client_start_time: ' + str(self._client_start_time) + ' message: ' + str(message))

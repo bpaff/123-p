@@ -14,7 +14,7 @@ print 'Loading bots....'
 
 processes = []
 
-for _ in range(0, 30):
+for _ in range(0, 10):
     process = subprocess.Popen('python client.py True', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     processes.append(process)
     time.sleep(0.1)

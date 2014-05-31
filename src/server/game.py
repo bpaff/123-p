@@ -15,7 +15,7 @@ class Game():
         self._games = games
         self._game_number = game_number
         self._connections = {}
-        self._connections_message_to_receive = {}
+        self._connections_ok_to_start_game = {}
         self._connection_to_drop = []
         self._connection_to_cycle = {}
         self._light_cycles = {}
@@ -25,7 +25,6 @@ class Game():
         self._tick_number = 1
         self._last_tick_time = None
         self._messages = []
-        self._message_history_tick = 0
         self._message_history = {}
         self._message_resend_count = {}
         self._waiting_for_startup = True
@@ -35,7 +34,7 @@ class Game():
     def add_connection(self, connection):
         connection_number = connection.get_connection_number()
         self._connections[connection_number] = connection
-        self._connections_message_to_receive[connection_number] = {}
+        self._connections_ok_to_start_game[connection_number] = False
         connection.set_game(self)
     
     
@@ -67,7 +66,7 @@ class Game():
                 self._connections[connection_number].on_close()
                 self._connections[connection_number].close()
                 del self._connections[connection_number]
-                del self._connections_message_to_receive[connection_number]
+                del self._connections_ok_to_start_game[connection_number]
                 del self._message_resend_count[connection_number]
             if not self._light_cycles:
                 break
@@ -90,7 +89,6 @@ class Game():
             self._connections[key].send_message(
               Messages.tick(0, self._game_number, [Messages.player_number(count)])
             )
-            self._connections_message_to_receive[key][0] = True
             self._message_resend_count[key] = 0
             self._light_cycles[count] = Light_cycle(None, count, True)
             self._light_cycles[count].set_location(Settings.CYCLE_LOCATIONS[count])
@@ -141,17 +139,14 @@ class Game():
             )
             self._connections[key].set_game(None)
         logging.debug('end_game, _game_number: ' + str(self._game_number) + ' _tick_number: ' + str(self._tick_number))
-        
-        for key in self._connections:
-            logging.debug('end_game, key: ' + str(key) + ' _connections_message_to_receive: ' + str(self._connections_message_to_receive[key]))
 
 
     def message(self, message, connection_number):
         message_decoded = json.loads(message)
-        if int(message_decoded['game_number']) != self._game_number:
+        if int(message_decoded['game']) != self._game_number:
             logging.debug('message, wrong game number, _game_number: ' + str(self._game_number) + ' message_decoded: ' + str(message_decoded))
             return
-        if int(message_decoded['tick_number']) > self._tick_number:
+        if int(message_decoded['tick']) > self._tick_number:
             logging.debug('message, tick number to high, _tick_number: ' + str(self._tick_number) + ' message_decoded: ' + str(message_decoded))
             return
         message_decoded['connection_number'] = connection_number
@@ -179,24 +174,23 @@ class Game():
         
         self._cleanup_dead_cycles()
         
-        self._remove_recived_message_history()
-        self._resend_message_history()
-        
         self._tick_number += 1
         self._last_tick_time = time.time()
     
     
     def _startup_tick(self):
         self._process_messages()
-        self._remove_recived_message_history()
-        self._resend_message_history()
-        if self._message_history_tick > 1:
-            self._waiting_for_startup = False
-            return
+        
+        self._waiting_for_startup = False
+        for key in self._connections:
+            if not self._connections_ok_to_start_game[key]:
+                self._waiting_for_startup = True
+                break
+        
         self._waiting_for_startup_ticks += 1
         if self._waiting_for_startup_ticks > 3.0 / Settings.TICK:
             for key in self._connections:
-                if self._message_history_tick in self._connections_message_to_receive[key]:
+                if not self._connections_ok_to_start_game[key]:
                     self.drop_connection(key)
             self._cleanup_dropped_connections()
         
@@ -230,24 +224,25 @@ class Game():
             if key is None:
                 continue
             
-            if message['message_type'] == Settings.MESSAGE_TYPE_QUIT_GAME:
+            if message['type'] == Settings.MESSAGE_TYPE_QUIT_GAME:
                 self.drop_connection(message['connection_number'])
                 continue
             
-            tick_number = int(message['tick_number'])
-            if message['message_type'] == Settings.MESSAGE_TYPE_TICK_RECEIVED:
-                try:
-                    del self._connections_message_to_receive[message['connection_number']][tick_number]
-                except KeyError:
-                    pass
+            if message['type'] == Settings.MESSAGE_TYPE_START_GAME:
+                self._connections_ok_to_start_game[message['connection_number']] = True
+            
+            if message['type'] == Settings.MESSAGE_TYPE_RESEND_TICK:
+                self._connections[message['connection_number']].send_message(self._message_history[int(message['tick'])])
+                self._message_resend_count[message['connection_number']] += 1
+                logging.debug('resent tick, connection_number: ' + str(message['connection_number']) + ' _game_number: ' + str(self._game_number) + ' tick: ' + str(int(message['tick'])))
             
             if key not in self._light_cycles:
                 continue
             
-            if message['message_type'] == Settings.MESSAGE_TYPE_TICK:
+            if message['type'] == Settings.MESSAGE_TYPE_TICK:
                 message_list = message['messages']
                 for message in message_list:
-                    if message['message_type'] == Settings.MESSAGE_TYPE_INPUT:
+                    if message['type'] == Settings.MESSAGE_TYPE_INPUT:
                         if message['input_type'] == 'up':
                             self._light_cycles[key].raise_speed()
                             continue
@@ -300,7 +295,6 @@ class Game():
         
         for key in self._connections:
             self._connections[key].send_message(self._message_history[self._tick_number])
-            self._connections_message_to_receive[key][self._tick_number] = True
     
     
     def _cleanup_dead_cycles(self):
@@ -313,47 +307,4 @@ class Game():
         
         if len(self._light_cycles) < 2:
             self.end_game()
-
-
-    def _remove_recived_message_history(self):
-        while self._message_history_tick < self._tick_number:
-            for key in self._connections:
-                if self._message_history_tick in self._connections_message_to_receive[key]:
-                    return
-            self._message_history_tick += 1
             
-                
-    def _resend_message_history(self): 
-        if self._message_history_tick > self._tick_number - int(0.4 / Settings.TICK):
-            return
-        
-        for i in range(self._message_history_tick, self._tick_number - int(0.3 / Settings.TICK)):
-            for key in self._connections:
-                if i in self._connections_message_to_receive[key]:
-                    if self._waiting_for_startup:
-                        if self._waiting_for_startup_ticks > 1.0 / Settings.TICK:
-                            if i == 0:
-                                self._connections[key].send_message(
-                                    Messages.tick(i, self._game_number, [Messages.player_number(self._connection_to_cycle[key])])
-                                )
-                            else:
-                                self._connections[key].send_message(self._message_history[i])
-                            self._message_resend_count[key] += 1
-                            try:
-                                del self._connections_message_to_receive[key][i]
-                            except KeyError:
-                                pass
-                            logging.debug('resent tick, key: ' + str(key) + ' _game_number: ' + str(self._game_number) + ' i: ' + str(i))
-                    else:
-                        self._connections[key].send_message(self._message_history[i])
-                        self._message_resend_count[key] += 1
-                        try:
-                            del self._connections_message_to_receive[key][i]
-                        except KeyError:
-                            pass
-                        logging.debug('resent tick, key: ' + str(key) + ' _game_number: ' + str(self._game_number) + ' i: ' + str(i))
-         
-        for key in self._connections:
-            if self._message_resend_count[key] > 50:
-                self.drop_connection(key)
-                continue

@@ -11,9 +11,9 @@ class Messages():
     @staticmethod
     def tick(tick_number, game_number, messages):
         return json.dumps({
-          'message_type':Settings.MESSAGE_TYPE_TICK,
-          'tick_number':tick_number,
-          'game_number':game_number,
+          'type':Settings.MESSAGE_TYPE_TICK,
+          'tick':tick_number,
+          'game':game_number,
           'messages':messages
         })
     
@@ -21,7 +21,7 @@ class Messages():
     @staticmethod
     def player_input(input_type):
         return {
-          'message_type':Settings.MESSAGE_TYPE_INPUT,
+          'type':Settings.MESSAGE_TYPE_INPUT,
           'input_type':input_type
         }
         
@@ -29,7 +29,7 @@ class Messages():
     @staticmethod
     def player_number(player_number):
         return {
-          'message_type':Settings.MESSAGE_TYPE_PLAYER,
+          'type':Settings.MESSAGE_TYPE_PLAYER,
           'player':player_number
         }
     
@@ -37,7 +37,7 @@ class Messages():
     @staticmethod
     def cycle_position(cycle_number, cycle_position):
         return {
-          'message_type':Settings.MESSAGE_TYPE_CYCLE_POSITION,
+          'type':Settings.MESSAGE_TYPE_CYCLE_POSITION,
           'cycle_number':cycle_number,
           'cycle_position':cycle_position
         }
@@ -46,7 +46,7 @@ class Messages():
     @staticmethod
     def cycle_alive(cycle_number, is_alive):
         return {
-          'message_type':Settings.MESSAGE_TYPE_CYCLE_ALIVE,
+          'type':Settings.MESSAGE_TYPE_CYCLE_ALIVE,
           'cycle_number':cycle_number,
           'is_alive':is_alive
         }
@@ -55,7 +55,7 @@ class Messages():
     @staticmethod
     def trail_on(cycle_number, trail_on, location):
         return {
-          'message_type':Settings.MESSAGE_TYPE_TRAIL_ON,
+          'type':Settings.MESSAGE_TYPE_TRAIL_ON,
           'cycle_number':cycle_number,
           'trail_on':trail_on,
           'location':location
@@ -65,7 +65,7 @@ class Messages():
     @staticmethod
     def trail_turn(cycle_number, location):
         return {
-          'message_type':Settings.MESSAGE_TYPE_TRAIL_TURN,
+          'type':Settings.MESSAGE_TYPE_TRAIL_TURN,
           'cycle_number':cycle_number,
           'location':location
         }
@@ -74,24 +74,32 @@ class Messages():
     @staticmethod
     def game_over(won):
         return {
-          'message_type':Settings.MESSAGE_TYPE_GAME_OVER,
+          'type':Settings.MESSAGE_TYPE_GAME_OVER,
           'won':won
         }
 
 
     @staticmethod
-    def tick_received(tick_number, game_number):
+    def start_game(tick_number, game_number):
         return json.dumps({
-          'message_type':Settings.MESSAGE_TYPE_TICK_RECEIVED,
-          'tick_number':tick_number,
-          'game_number':game_number
+          'type':Settings.MESSAGE_TYPE_START_GAME,
+          'tick':tick_number,
+          'game':game_number
         })
     
     
     @staticmethod
     def quit_game(tick_number, game_number):
         return json.dumps({
-          'message_type':Settings.MESSAGE_TYPE_QUIT_GAME,
-          'tick_number':tick_number,
-          'game_number':game_number
+          'type':Settings.MESSAGE_TYPE_QUIT_GAME,
+          'tick':tick_number,
+          'game':game_number
+        })
+        
+    @staticmethod
+    def resend_tick(tick_number, game_number):
+        return json.dumps({
+          'type':Settings.MESSAGE_TYPE_RESEND_TICK,
+          'tick':tick_number,
+          'game':game_number
         })
